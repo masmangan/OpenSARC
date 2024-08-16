@@ -44,12 +44,33 @@ namespace BusinessData.Distribuicao.BusinessLogic
 
             AlocacaoBO controleAloc = new AlocacaoBO();
             List<BusinessData.Entities.Alocacao> todasAloc = controleAloc.GetAlocacoes(calAtual.InicioG1);
-            HashSet<String> indisponiveis = new HashSet<string>();
+//            HashSet<String> indisponiveis = new HashSet<string>();
+            Dictionary<string, string> convHorario = new Dictionary<string, string>
+            {
+                { "A", "AB" }, { "B", "AB" },
+                { "C", "CD" }, { "D", "CD" },
+                { "E", "EX" }, { "X", "EX" },
+                { "F", "FG" }, { "G", "FG" },
+                { "H", "HI" }, { "I", "HI" },
+                { "J", "JK" }, { "K", "JK" },
+                { "L", "LM" }, { "M", "LM" },
+                { "N", "NP" }, { "P", "NP" }
+            };
+            Dictionary<String, List<BusinessData.Entities.Recurso>> indisponiveis = new Dictionary<string, List<BusinessData.Entities.Recurso>>();
             foreach(BusinessData.Entities.Alocacao aloc in todasAloc)
             {
-                indisponiveis.Add(aloc.Data.ToString()+aloc.Horario.ToString()+aloc.Recurso.Descricao);
+                string key = aloc.Data.ToString() + convHorario[aloc.Horario.ToString()];
+                List<BusinessData.Entities.Recurso> recursosDiaHora = null;
+                if (indisponiveis.ContainsKey(key))
+                    recursosDiaHora = indisponiveis[key];
+                else
+                    recursosDiaHora = new List<BusinessData.Entities.Recurso>();
+                recursosDiaHora.Add(aloc.Recurso);
+                indisponiveis[key] = recursosDiaHora;
+                //Debug.WriteLine(key);
+
             }
-            return;
+            //return;
             //Para cada prioridade de requisicao
             for (int prioridadePedidos = 1; prioridadePedidos <= maxPri; /*calAtual.Categorias.Count*/ prioridadePedidos++)
             {
@@ -74,10 +95,16 @@ namespace BusinessData.Distribuicao.BusinessLogic
 
                     Debug.WriteLine("Calculando total de requisições para as turmas...");
                     //Calcula o numero de requisicoes para as turmas
+                    bool temPrioridade = true;
                     foreach (Requisicao req in requisicoes)
                     {
                         satTurmas[req.Turma].Pedidos++;
                         //Calcula o total para a normalizacao
+                        if (!req.Turma.EntidadeTurma.Disciplina.Categoria.Prioridades.ContainsKey(cat.EntidadeCategoria))
+                        {
+                            temPrioridade = false;
+                            break;
+                        }
                         prioridadeAux = req.Turma.EntidadeTurma.Disciplina.Categoria.Prioridades[cat.EntidadeCategoria];
                         if (!listaPrioridadesAux.Contains(prioridadeAux))
                         {
@@ -85,6 +112,7 @@ namespace BusinessData.Distribuicao.BusinessLogic
                             listaPrioridadesAux.Add(prioridadeAux);
                         }
                     }
+                    if (!temPrioridade) continue; // por algum motivo, Categoria.Prioridades nao tem a chave dessa categoria
 
                     //Normaliza as prioridades entre categorias de disciplina e categorias de recurso atual para
                     //um total de 100%
@@ -135,6 +163,21 @@ namespace BusinessData.Distribuicao.BusinessLogic
                                         //Debug.WriteLine("!!! Recurso " + rec.EntidadeRecurso.Descricao + " bloqueado por dependência");
                                         bloqueado = true;
                                         break;
+                                    }
+                                }
+                                // Verifica se já existe reserva para evento previamente alocada
+                                string key = dia.Data.ToString() + horario.ToString();
+                                if (indisponiveis.ContainsKey(key))
+                                {
+                                    List<BusinessData.Entities.Recurso> listaRecsHorario = indisponiveis[key];
+                                    foreach (var recT in listaRecsHorario)
+                                    {
+                                        // Recurso já alocado para evento?
+                                        if (recT.Descricao.Equals(rec.EntidadeRecurso.Descricao))
+                                        {
+                                            bloqueado = true;
+                                            break;
+                                        }
                                     }
                                 }
                                 if (!bloqueado)

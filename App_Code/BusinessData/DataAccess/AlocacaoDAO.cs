@@ -246,6 +246,8 @@ namespace BusinessData.DataAccess
                                 aux.Categoria = catRec;
                                 aux.Descricao = leitor.GetString(leitor.GetOrdinal("Descricao"));
                                 aux.EstaDisponivel = leitor.GetBoolean(leitor.GetOrdinal("EstaDisponivel"));
+                                aux.Abrev = leitor.GetString(leitor.GetOrdinal("Abrev"));
+                                aux.Tipo = leitor.GetString(leitor.GetOrdinal("Tipo"))[0];
                                 List<HorarioBloqueado> listaHB = RecDAO.GetHorarioBloqueadoByRecurso(leitor.GetGuid(leitor.GetOrdinal("RecursoId")));
                                 aux.HorariosBloqueados = listaHB;
                                 aux.Id = leitor.GetGuid(leitor.GetOrdinal("RecursoId"));
@@ -433,6 +435,42 @@ namespace BusinessData.DataAccess
                     dateTime = (DateTime)leitor["Data"];
 
                     aloc = new Alocacao(rec, dateTime, hora, au, evento);
+
+                    lista.Add(aloc);
+                }
+            }
+            return lista;
+        }
+
+        public List<Alocacao> GetAlocacoesRecurso(Calendario cal, Guid recursoId)
+        {
+            List<Alocacao> lista = new List<Alocacao>();
+
+            var con = new SqlConnection(baseDados.ConnectionString);
+            var cmd = con.CreateCommand();
+            cmd.CommandText = "select * from Alocacao a where a.Data >= @DataInicio and a.RecursoId = (@RecursoId) order by a.Data";
+            cmd.CommandType = CommandType.Text;
+            cmd.Parameters.AddWithValue("@DataInicio", cal.InicioG1);
+            cmd.Parameters.AddWithValue("@RecursoId", recursoId);
+
+//           baseDados.AddInParameter(cmd, "@RecursoId", DbType.Guid, recursoId);
+//            baseDados.AddInParameter(cmd, "@DataInicio", DbType.DateTime, cal.InicioG1);
+//            baseDados.AddInParameter(cmd, "@DataFim", DbType.DateTime, cal.FimG2);
+
+            using (IDataReader leitor = baseDados.ExecuteReader(cmd))
+            {
+
+                Alocacao aloc;
+                DateTime dateTime;
+                string hora;
+
+                while (leitor.Read())
+                {
+                    
+                    hora = (string)leitor.GetString(leitor.GetOrdinal("Horario"));
+                    dateTime = (DateTime)leitor.GetDateTime(leitor.GetOrdinal("Data"));
+
+                    aloc = new Alocacao(null, dateTime, hora, null, null);
 
                     lista.Add(aloc);
                 }
@@ -641,6 +679,10 @@ namespace BusinessData.DataAccess
                     Aula au = null;
                     Recurso rec = null;
                     Evento evento = null;
+
+                    DateTime? dataR = leitor["Data"] as DateTime?;
+                    if (dataR.HasValue)
+                        data = dataR.Value;
 
                     rec = recDAO.GetRecurso(leitor.GetGuid(leitor.GetOrdinal("RecursoId")));
 

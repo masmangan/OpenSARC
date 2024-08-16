@@ -17,11 +17,15 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.IO;
+using System.Diagnostics;
+using System.Drawing;
+using System.Runtime.Remoting.Messaging;
 
 public partial class _Default : System.Web.UI.Page
 {
 	private List<string> horarios;   
 	private List<TimeSpan> horariosTime;
+    private SRRCDAO logDataDAO = new SRRCDAO();
 
     protected void Page_Load(object sender, EventArgs e)
     {
@@ -51,9 +55,14 @@ public partial class _Default : System.Web.UI.Page
 			
 			
 			Timer1_Tick(null, null);
-        }        
-        
+        }
+        dgAlocacoes.AlternatingItemStyle.BackColor = Color.Gainsboro;
+        dgAlocacoes.ItemStyle.BackColor = Color.White;
+        dgAlocacoes2.AlternatingItemStyle.BackColor= Color.Gainsboro;
+        dgAlocacoes2.ItemStyle.BackColor = Color.White;
+
         //lblDataHora.Text = DateTime.Now.ToString();
+
     }
     protected void loginEntrada_LoginError(object sender, EventArgs e)
     {
@@ -65,26 +74,37 @@ public partial class _Default : System.Web.UI.Page
         
     }
 
-    protected bool moodleAuth(String user, String pass)
+    protected bool moodleAuth(String user, String pass, out string reason)
     {
+        reason = "";
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         var request = WebRequest.Create("https://moodle.pucrs.br/cead/sarcauth.php");
         // All teacher user ids start with "10"... but in Moodle we use the old format (without "10")
-        if (user.StartsWith("10"))
-            user = user.Substring(2);
-        var postdata = "user="+user+"&pass="+pass;
+        //if (user.StartsWith("10"))
+        //    user = user.Substring(2);
+        var postdata = "user="+user+"&pass="+Uri.EscapeDataString(pass);
         var data = Encoding.ASCII.GetBytes(postdata);
         request.Method = "POST";
         request.ContentType = "application/x-www-form-urlencoded";
         request.ContentLength = data.Length;
 
-        using (var stream = request.GetRequestStream())
+        try
         {
-            stream.Write(data, 0, data.Length);
+            using (var stream = request.GetRequestStream())
+            {
+                stream.Write(data, 0, data.Length);
+            }
         }
-
+        catch (WebException e)
+        {
+            Debug.WriteLine(e.ToString());
+            reason = e.Message;
+            return false;
+        }
         var response = request.GetResponse();
         var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
 
+        Debug.WriteLine("Moodle:" + responseString);
         if (responseString == "FAIL\n")
             return false;
         return true;
@@ -92,16 +112,21 @@ public partial class _Default : System.Web.UI.Page
 
     protected void loginEntrada_Authenticate(object sender, AuthenticateEventArgs e)
     {
+        string reason="";
         if(Membership.ValidateUser(loginEntrada.UserName, loginEntrada.Password))
             e.Authenticated = true;
-        else if (moodleAuth(loginEntrada.UserName, loginEntrada.Password))
+        else if (moodleAuth(loginEntrada.UserName, loginEntrada.Password, out reason))
             e.Authenticated = true;
         else
             e.Authenticated = false;
+        lblDataHora.Text = reason;
+        if (reason != string.Empty)
+            lblDataHora.ForeColor = System.Drawing.Color.Red;
     }
 
     protected void dgAlocacoes_ItemDataBound(object sender, DataGridItemEventArgs e)
     {
+        if (logDataDAO == null) return;
         if (e.Item.ItemType == ListItemType.AlternatingItem || e.Item.ItemType == ListItemType.Item)
         {
             Label lblTurmaEvento = (Label)e.Item.FindControl("lblTurmaEvento");
@@ -109,6 +134,8 @@ public partial class _Default : System.Web.UI.Page
             Label lblDisc = (Label)e.Item.FindControl("lblDisc");
             Label lblResponsavel = (Label)e.Item.FindControl("lblResponsavel");
             Label lblCurso = (Label)e.Item.FindControl("lblCurso");
+            Label lblRecurso = (Label)e.Item.FindControl("lblRecurso");
+            Label lblStatus = (Label)e.Item.FindControl("lblEstado");
 
             Alocacao aloc = (Alocacao)e.Item.DataItem;
 
@@ -125,6 +152,7 @@ public partial class _Default : System.Web.UI.Page
                 //lblTurmaEvento.Text = aloc.Evento.Titulo;
                 lblResponsavel.Text = aloc.Evento.AutorId.Nome;
             }
+            lblStatus.Text = logDataDAO.GetUltimoStatus(lblRecurso.Text);
         }
     }
 

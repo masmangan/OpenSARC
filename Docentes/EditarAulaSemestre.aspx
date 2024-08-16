@@ -88,8 +88,20 @@ return "Suas alterações não foram salvas. Deseja descartar as alterações feitas?
     </div>
     <asp:ScriptManager ID="ScriptManager1" runat="server">
     </asp:ScriptManager>
-    	<asp:Button ID="Button1" runat="server" CssClass="ms-toolbar" OnClick="btnExportarHTML_Click"
-                    Text="Exportar HTML" />
+    	<asp:Button ID="Button1" runat="server" CssClass="ms-toolbar" OnClick="btnExportarHTML_Click" ToolTip="Faz download de um arquivo HTML com o cronograma"
+                    Text="Exportar HTML" />&nbsp;&nbsp;&nbsp;
+        <asp:Button ID="Button2" runat="server" CssClass="ms-toolbar" OnClick="btnExportarCSV_Click" ToolTip="Faz download de um arquivo CSV com o cronograma para o sistema de atas"
+                    Text="Exportar CSV/Atas" />&nbsp;&nbsp;&nbsp;
+        <asp:HyperLink ID="Link1" runat="server" CssClass="ms-toolbar" NavigateUrl="" ToolTip="Este link pode ser usado em qualquer lugar para visualizar o cronograma"
+                    Text="Link para HTML" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <asp:Label ID="lblCals" runat="server" CssClass="ms-consolestatus" Text="Compartilhar calendário:"></asp:Label>
+        <asp:HyperLink ID="Link2" runat="server" CssClass="ms-toolbar" NavigateUrl="" ToolTip="Clique aqui para importar o cronograma como um calendário no Google Calendar"
+                    Text="Google Calendar"  Target="_blank"/>&nbsp;&nbsp;
+        <asp:HyperLink ID="Link3" runat="server" CssClass="ms-toolbar" NavigateUrl="" ToolTip="Este link pode ser usado para importar o cronograma no Outlook/Apple Calendar"
+                    Text="Link para webcal" />&nbsp;&nbsp;
+        <asp:HyperLink ID="Link4" runat="server" CssClass="ms-toolbar" NavigateUrl="" ToolTip="Download do arquivo .ics (formato iCal)"
+            Text="Download arquivo .ics" />
+
     <asp:UpdatePanel ID="UpdatePanel1" runat="server">
         <ContentTemplate>
             <div align="left">
