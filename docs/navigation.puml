@@ -1,0 +1,75 @@
+@startuml
+title OpenSARC Navigational Flow
+
+note as N1
+Date: 2024-08-29
+Email: marco.mangan@pucrs.br
+end note
+
+left to right direction
+
+DefaultPage -down-> SelectClassPage
+
+state DefaultPage {
+  [*] --> Idle
+
+  Idle --> NavigatingToAbout : Click "About Page"
+  Idle --> NavigatingToRepository : Click "Repository Page"
+  Idle --> Authenticating : Enter Username and Password
+}
+
+state "Authenticating" as Authenticating {
+  [*] --> Authenticated : Successful Login
+  [*] --> AuthenticationFailed : Failed Login
+}
+
+Authenticated --> SelectClassPage
+AuthenticationFailed --> Idle : Retry Login
+
+state "SelectClass Page" as SelectClassPage {
+  [*] --> ViewingClasses
+
+  ViewingClasses --> LoggingOut : Click "Logout"
+  ViewingClasses --> SelectingSemester : Select Another Semester
+  ViewingClasses --> NavigatingToClass : Click on Specific Class
+  ViewingClasses --> NavigatingToHelp : Click "Help Page"
+  ViewingClasses --> NavigatingToChangePassword : Click "Change Password"
+  ViewingClasses --> NavigatingToAddEvent : Click "Add Event"
+  ViewingClasses --> NavigatingToListEvents : Click "List Events"
+  ViewingClasses --> NavigatingToListFutureEvents : Click "List Future Events"
+  ViewingClasses --> NavigatingToListAllocations : Click "List Allocations"
+  ViewingClasses --> NavigatingToListClasses : Click "List Classes"
+  ViewingClasses --> NavigatingToTimeTable : Click "Time Table"
+}
+
+LoggingOut --> DefaultPage
+NavigatingToClass --> ClassPage
+NavigatingToHelp --> HelpPage
+NavigatingToChangePassword --> ChangePasswordPage
+NavigatingToAddEvent --> AddEventPage
+NavigatingToListEvents --> ListEventsPage
+NavigatingToListFutureEvents --> ListFutureEventsPage
+NavigatingToListAllocations --> ListAllocationsPage
+NavigatingToListClasses --> ListClassesPage
+NavigatingToTimeTable --> TimeTablePage
+SelectingSemester --> ViewingClasses : Semester Selected
+
+state "GitHub" as GitHub {
+  [*] --> AboutPage : About Page
+  [*] --> RepositoryPage : Repository Page
+}
+
+NavigatingToAbout --> AboutPage
+NavigatingToRepository --> RepositoryPage
+
+ClassPage : Internal System
+HelpPage : Internal System
+ChangePasswordPage : Internal System
+AddEventPage : Internal System
+ListEventsPage : Internal System
+ListFutureEventsPage : Internal System
+ListAllocationsPage : Internal System
+ListClassesPage : Internal System
+TimeTablePage : Internal System
+
+@enduml
