@@ -1,0 +1,18 @@
+@startuml
+title OpenSARC Component Diagram
+
+package "OpenSARC System" {
+  [OpenSARC]
+
+}
+
+package "External Systems" {
+  [Dashboard]
+  [iCal Export] as iCalExport
+}
+
+
+[OpenSARC] <--> [Dashboard] : Data Import/Export from/to Dashboard
+[OpenSARC] -right-> iCalExport : Export to Google, Outlook, Apple Calendar
+
+@enduml
